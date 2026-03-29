@@ -1,5 +1,3 @@
-# youtube-automation
-
 # Automation System for YouTube
 
 Reddit stories are retrieved by this automated YouTube channel system, which then turns them into YouTube videos.
