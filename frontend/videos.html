@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videos — YT Automation</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <main class="main-content">
+    <div class="topbar">
+      <h2 class="page-title">Videos</h2>
+      <button class="btn btn-ghost" onclick="cleanupOld()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Clean Up Old Videos
+      </button>
+    </div>
+    <div id="alert-area"></div>
+
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <div class="card-title">Video Storage</div>
+          <div id="storage-info" style="font-size:0.82rem;color:var(--text-muted);">Loading...</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.82rem;color:var(--text-muted);">
+          Retention: <strong id="retention-days" style="color:var(--accent);">7 days</strong>
+          <a href="/settings" style="font-size:0.75rem;">(change in Settings)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-row">
+        <div class="card-title">Stored Videos</div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:0.35rem 0.65rem;" onclick="filterVideos('all')">All</button>
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:0.35rem 0.65rem;" onclick="filterVideos('long_form')">Long-form</button>
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:0.35rem 0.65rem;" onclick="filterVideos('short')">Shorts</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Filename</th><th>Type</th><th>Size</th><th>Created</th><th>Expires In</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="videos-body">
+            <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+let allVideos = [];
+
+async function loadVideos() {
+  const data = await apiFetch('/api/system/videos');
+  if (!data) return;
+  allVideos = data.videos || [];
+  document.getElementById('retention-days').textContent = data.retention_days + ' days';
+  renderVideos(allVideos);
+}
+
+function filterVideos(type) {
+  const filtered = type === 'all' ? allVideos : allVideos.filter(v => v.type === type);
+  renderVideos(filtered);
+}
+
+function renderVideos(videos) {
+  const tbody = document.getElementById('videos-body');
+  if (!videos.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem;">No videos stored</td></tr>';
+    return;
+  }
+  tbody.innerHTML = videos.map(v => `
+    <tr>
+      <td style="font-family:monospace;font-size:0.75rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.filename}</td>
+      <td>${v.type === 'short' ? '<span class="badge badge-info">Short</span>' : '<span class="badge badge-muted">Long-form</span>'}</td>
+      <td>${v.size_mb} MB</td>
+      <td>${formatDate(v.created)}</td>
+      <td style="color:${v.expires_in_days <= 1 ? 'var(--error)' : v.expires_in_days <= 3 ? 'var(--warning)' : 'var(--text-muted)'};">
+        ${v.expires_in_days === 0 ? 'Today' : v.expires_in_days + ' days'}
+      </td>
+      <td style="display:flex;gap:0.4rem;">
+        <a href="/api/system/videos/download/${v.filename}" class="btn btn-ghost" style="font-size:0.72rem;padding:0.3rem 0.6rem;">
+          ⬇ Download
+        </a>
+        <button class="btn btn-ghost" style="font-size:0.72rem;padding:0.3rem 0.6rem;color:var(--error);border-color:rgba(255,71,87,0.3);" onclick="deleteVideo('${v.filename}')">
+          🗑 Delete
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+async function deleteVideo(filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+  const res = await apiFetch('/api/system/videos/delete', { method: 'POST', body: { filename } });
+  if (res?.success) { showAlert('alert-area', '✓ Video deleted.', 'success'); loadVideos(); }
+  else showAlert('alert-area', '✗ Failed to delete.', 'error');
+}
+
+async function cleanupOld() {
+  const res = await apiFetch('/api/system/cleanup', { method: 'POST' });
+  if (res?.success) {
+    showAlert('alert-area', `✓ Cleaned up ${res.deleted} old videos.`, 'success');
+    loadVideos();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadVideos);
+</script>
+</body>
+</html>

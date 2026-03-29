@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — YT Automation</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <main class="main-content">
+    <div class="topbar">
+      <h2 class="page-title">Dashboard</h2>
+      <div class="topbar-right">
+        <span id="status-badge"></span>
+        <div class="notif-bell" id="notif-bell" onclick="toggleNotifications()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notif-count" style="display:none">0</span>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">Notifications</div>
+            <div id="notif-list"><div class="notif-empty">No new notifications</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Subscribers</div>
+        <div class="metric-value" id="m-subs">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Views</div>
+        <div class="metric-value" id="m-views">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Est. Monthly (NZD)</div>
+        <div class="metric-value" id="m-earnings">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Videos This Week</div>
+        <div class="metric-value" id="m-week">—</div>
+      </div>
+    </div>
+
+    <!-- System Controls -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="section-row">
+        <div class="card-title">System Controls</div>
+        <span id="sys-status"></span>
+      </div>
+      <div class="controls-row">
+        <button class="btn btn-warning btn-lg" onclick="pauseSystem()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Pause
+        </button>
+        <button class="btn btn-success btn-lg" onclick="resumeSystem()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Resume
+        </button>
+        <div style="margin-left:auto;color:var(--text-muted);font-size:0.82rem;">
+          Next run: <strong id="next-run">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- TTS Counter + System Stats row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.25rem;" class="stats-row">
+
+      <!-- TTS Counter -->
+      <div class="card">
+        <div class="card-title">TTS Usage This Month</div>
+        <div id="tts-paused-banner" style="display:none;background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:#ff4757;border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.75rem;font-size:0.82rem;">
+          ⚠️ TTS limit reached — video generation paused until next month
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">
+          <span id="tts-chars" style="font-size:1.3rem;font-weight:700;">—</span>
+          <span style="color:var(--text-muted);font-size:0.78rem;">/ 1,000,000 chars</span>
+        </div>
+        <div style="background:#1a1a1a;border-radius:999px;height:8px;overflow:hidden;margin-bottom:0.5rem;">
+          <div id="tts-bar" style="height:100%;border-radius:999px;background:var(--success);transition:width 0.3s;width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);">
+          <span id="tts-percent">0%</span>
+          <span id="tts-reset">Resets 1st of next month</span>
+        </div>
+      </div>
+
+      <!-- System Stats -->
+      <div class="card">
+        <div class="card-title">System Stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.82rem;">
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">CPU</div>
+            <div id="stat-cpu" style="font-weight:700;">—</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">RAM</div>
+            <div id="stat-ram" style="font-weight:700;">—</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Temperature</div>
+            <div id="stat-temp" style="font-weight:700;">—</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Uptime</div>
+            <div id="stat-uptime" style="font-weight:700;">—</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Disk Used</div>
+            <div id="stat-disk" style="font-weight:700;">—</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Disk Free</div>
+            <div id="stat-disk-free" style="font-weight:700;">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel Status -->
+    <div class="section-row"><h3 style="font-size:0.9rem;font-weight:700;">Channel Status</h3></div>
+    <div class="channels-grid" id="channel-cards" style="margin-bottom:1.25rem;"></div>
+
+    <!-- Upload Queue -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">Upload Queue</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Channel</th><th>Title</th><th>Scheduled</th><th>Status</th></tr></thead>
+          <tbody id="queue-body"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:1.5rem;">Queue is empty</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Upload History -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">Upload History (Last 7 Days)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date/Time</th><th>Channel</th><th>Title</th><th>Duration</th><th>Status</th><th>Views</th></tr></thead>
+          <tbody id="history-body"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:1.5rem;">No uploads yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Shutdown -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:2rem;">
+      <button class="btn btn-error" onclick="openShutdownModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        Shutdown System
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- Shutdown Modal -->
+<div class="modal-overlay" id="shutdown-modal">
+  <div class="modal">
+    <div class="modal-title">⚠️ Shutdown System?</div>
+    <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.5;">This will power off the Raspberry Pi / VM completely. You will need physical access or a remote power-on method to restart it. Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeShutdownModal()">Cancel</button>
+      <button class="btn btn-error" onclick="doShutdown()">Yes, Shut Down</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

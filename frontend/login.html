@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>YouTube Automation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      background: #080808; color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; min-height: 100dvh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .wrap {
+      width: 100%; max-width: 340px;
+      background: #111; border: 1px solid #1e1e1e;
+      border-radius: 20px; padding: 2rem 1.75rem 1.75rem;
+      text-align: center;
+    }
+    .logo {
+      width: 54px; height: 54px; background: rgba(0,212,255,0.1);
+      border-radius: 14px; display: flex; align-items: center;
+      justify-content: center; margin: 0 auto 1rem;
+    }
+    .logo svg { width: 26px; height: 26px; stroke: #00d4ff; }
+    h1 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .sub { color: #555; font-size: 0.82rem; margin-bottom: 1.5rem; min-height: 1.2rem; }
+    .step-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin-bottom: 1rem; }
+
+    /* PIN dots */
+    .dots { display: flex; justify-content: center; gap: 0.9rem; margin-bottom: 1.5rem; }
+    .dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid #2a2a2a; background: transparent; transition: all 0.15s; }
+    .dot.on { background: #00d4ff; border-color: #00d4ff; box-shadow: 0 0 10px rgba(0,212,255,0.35); }
+    .dot.err { background: #ff4757; border-color: #ff4757; }
+
+    /* Keypad */
+    .keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.6rem; margin-bottom: 0.75rem; }
+    .key {
+      background: #181818; border: 1px solid #252525; border-radius: 12px;
+      color: #f0f0f0; font-size: 1.3rem; font-weight: 600;
+      padding: 0.9rem 0; cursor: pointer;
+      transition: background 0.1s, transform 0.1s;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .key:active { background: #00d4ff; border-color: #00d4ff; color: #000; transform: scale(0.93); }
+    .key.del { font-size: 0.95rem; color: #555; }
+    .key.del:active { background: #222; color: #f0f0f0; }
+    .key.blank { visibility: hidden; pointer-events: none; }
+    .err-msg { color: #ff4757; font-size: 0.78rem; min-height: 1.1rem; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="23 7 16 12 23 17 23 7"/>
+      <rect x="1" y="5" width="15" height="14" rx="2"/>
+    </svg>
+  </div>
+  <h1>YT Automation</h1>
+  <div class="sub" id="sub">Loading...</div>
+  <div class="step-label" id="step-lbl"></div>
+
+  <div class="dots">
+    <div class="dot" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <div class="keypad">
+    <button class="key" onclick="k('1')">1</button>
+    <button class="key" onclick="k('2')">2</button>
+    <button class="key" onclick="k('3')">3</button>
+    <button class="key" onclick="k('4')">4</button>
+    <button class="key" onclick="k('5')">5</button>
+    <button class="key" onclick="k('6')">6</button>
+    <button class="key" onclick="k('7')">7</button>
+    <button class="key" onclick="k('8')">8</button>
+    <button class="key" onclick="k('9')">9</button>
+    <button class="key blank"></button>
+    <button class="key" onclick="k('0')">0</button>
+    <button class="key del" onclick="del()">⌫</button>
+  </div>
+  <div class="err-msg" id="err"></div>
+</div>
+
+<script>
+let pin = '', confirm_pin = '', mode = 'login', step = 'enter';
+
+async function init() {
+  const r = await fetch('/api/auth/check');
+  const d = await r.json();
+  if (d.authenticated) { location.href = '/dashboard'; return; }
+  if (!d.has_pin) {
+    mode = 'setup'; step = 'enter';
+    document.getElementById('sub').textContent = 'Create a 4-digit PIN to get started';
+    document.getElementById('step-lbl').textContent = 'Choose PIN';
+  } else {
+    mode = 'login'; step = 'enter';
+    document.getElementById('sub').textContent = 'Enter your PIN to continue';
+  }
+}
+
+function dots(val, prefix) {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById((prefix||'d') + i);
+    if (el) { el.classList.toggle('on', i < val.length); el.classList.remove('err'); }
+  }
+}
+
+function k(digit) {
+  if (pin.length >= 4) return;
+  pin += digit;
+  dots(pin);
+  if (pin.length === 4) setTimeout(next, 130);
+}
+
+function del() {
+  pin = pin.slice(0, -1);
+  dots(pin);
+  document.getElementById('err').textContent = '';
+}
+
+async function next() {
+  if (mode === 'login') {
+    const r = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin}) });
+    const d = await r.json();
+    if (d.success) { location.href = '/dashboard'; return; }
+    showErr('Incorrect PIN');
+  } else if (mode === 'setup') {
+    if (step === 'enter') {
+      confirm_pin = pin; pin = '';
+      step = 'confirm';
+      document.getElementById('step-lbl').textContent = 'Confirm PIN';
+      dots(pin);
+    } else {
+      if (pin !== confirm_pin) { showErr("PINs don't match, try again"); step = 'enter'; confirm_pin = ''; document.getElementById('step-lbl').textContent = 'Choose PIN'; return; }
+      const r = await fetch('/api/auth/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin}) });
+      const d = await r.json();
+      if (d.success) { location.href = '/dashboard'; return; }
+      showErr(d.error || 'Setup failed');
+    }
+  }
+}
+
+function showErr(msg) {
+  document.getElementById('err').textContent = msg;
+  for (let i = 0; i < 4; i++) { const el = document.getElementById('d'+i); if(el) el.classList.add('err'); }
+  setTimeout(() => { pin=''; dots(pin); document.getElementById('err').textContent=''; if(mode==='setup'){step='enter';confirm_pin='';document.getElementById('step-lbl').textContent='Choose PIN';} }, 900);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key >= '0' && e.key <= '9') k(e.key);
+  if (e.key === 'Backspace') del();
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logs — YouTube Automation</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <main class="main-content">
+    <div class="topbar">
+      <h2 class="page-title">System Logs</h2>
+      <div class="topbar-right">
+        <a href="/api/logs/download" class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download Logs
+        </a>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:0.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:0.8rem;color:var(--text-muted);">Last 200 entries · Auto-refreshing every 5s</div>
+        <div style="display:flex;gap:0.5rem;font-size:0.75rem;">
+          <span style="color:var(--text-muted);">● Info</span>
+          <span style="color:var(--warning);">● Warning</span>
+          <span style="color:var(--error);">● Error</span>
+        </div>
+      </div>
+      <div id="log-container" style="max-height:75vh;overflow-y:auto;font-family:'JetBrains Mono','Fira Code',monospace;">
+        <div style="padding:2rem;color:var(--text-muted);text-align:center;">Loading logs...</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/logs.js"></script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Channels — YT Automation</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <main class="main-content">
+    <div class="topbar">
+      <h2 class="page-title">Channels</h2>
+      <button class="btn btn-primary" onclick="openAddModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Channel
+      </button>
+    </div>
+    <div id="alert-area"></div>
+    <div class="channels-grid" id="channels-grid">
+      <div style="color:var(--text-muted);">Loading channels...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Channel Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add New Channel</div>
+    <div class="form-group">
+      <label class="form-label">Channel Name</label>
+      <input type="text" id="add-name" class="form-control" placeholder="e.g. Horror Stories">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Genre</label>
+      <select id="add-genre" class="form-control"></select>
+    </div>
+    <div class="settings-grid">
+      <div class="form-group">
+        <label class="form-label">Min Video Length (min)</label>
+        <select id="add-length-min" class="form-control">
+          <option value="8">8 min</option>
+          <option value="10" selected>10 min</option>
+          <option value="12">12 min</option>
+          <option value="15">15 min</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Video Length (min)</label>
+        <select id="add-length-max" class="form-control">
+          <option value="10">10 min</option>
+          <option value="12">12 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="20">20 min</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Videos Per Day</label>
+        <select id="add-vpd" class="form-control">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shorts Per Day</label>
+        <select id="add-spd" class="form-control">
+          <option value="0">0</option>
+          <option value="2" selected>2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createChannel()">Create Channel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Channel Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Channel</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label class="form-label">Channel Name</label>
+      <input type="text" id="edit-name" class="form-control">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Genre</label>
+      <select id="edit-genre" class="form-control"></select>
+    </div>
+    <div class="settings-grid">
+      <div class="form-group">
+        <label class="form-label">Min Video Length</label>
+        <select id="edit-length-min" class="form-control">
+          <option value="8">8 min</option>
+          <option value="10">10 min</option>
+          <option value="12">12 min</option>
+          <option value="15">15 min</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Video Length</label>
+        <select id="edit-length-max" class="form-control">
+          <option value="10">10 min</option>
+          <option value="12">12 min</option>
+          <option value="15">15 min</option>
+          <option value="20">20 min</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Videos Per Day</label>
+        <select id="edit-vpd" class="form-control">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shorts Per Day</label>
+        <select id="edit-spd" class="form-control">
+          <option value="0">0</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="edit-active" checked><span class="toggle-slider"></span></label>
+        <span>Channel Active</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveChannel()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title">Delete Channel?</div>
+    <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.5;">This will permanently delete this channel slot and disconnect any linked YouTube account. This cannot be undone.</p>
+    <input type="hidden" id="delete-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-error" onclick="confirmDelete()">Delete Channel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/channels.js"></script>
+</body>
+</html>
